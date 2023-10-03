@@ -3,12 +3,40 @@ import sys
 import math
 import numpy as np
 
+# this can be optimized, but waaaay too tired to implement nice way rn (see https://en.wikipedia.org/wiki/Longest_common_substring)
+def longestCommonSubarray(s,t):
+    print(s)
+    print(t)
+    L = np.zeros((len(s), len(t)))
+    z = 0
+    start = (0,0)
+    for i in range(len(s)):
+        for j in range(len(t)):
+            if s[i] == t[j]:
+                if i == 0 or j == 0:
+                    L[i][j] = 1
+                else:
+                    L[i][j] = L[i-1][j-1] + 1
+                if L[i][j] > z:
+                    start = (i-z, j-z)
+                    print("new winner", i-z,i+1, s[int(i-z):int(i+1)])
+                    z = L[i][j]
+            else:
+                L[i][j] = 0
+    return start,z
+
+
 # constants
 offset = 5 #the vertical pixel offset when looking at colors
+n_bits = 16
 
-
-np.set_printoptions(threshold=sys.maxsize)
-image = cv2.resize(cv2.imread("images/moa6.png",0), (1000,625))
+strips = np.array([
+    [0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1],
+    [0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1],
+    [0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1],
+    [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+    ])
+image = cv2.resize(cv2.imread("images/moa4.png",0), (1000,625))
 #make binary (black/white) image
 ret, binImg = cv2.threshold(image,127,255,cv2.THRESH_BINARY)
 
@@ -21,13 +49,21 @@ vertical_edge_kernel = np.array(
      [ .5, 1, 1, 1, .5],
      [ .5, 1, 1, 1, .5]]) * 1/8
 
-edges = cv2.convertScaleAbs(cv2.filter2D(image, cv2.CV_64F, vertical_edge_kernel))
+diagonal_edge_kernel = np.array(
+    [[-1,-1, 0, 1, 1],
+     [-1,-1, 0, 1, 1],
+     [ 0, 0, 0, 0, 0],
+     [ 1, 1, 0,-1,-1],
+     [ 1, 1, 0,-1,-1]]) * 1/8
+
+edges = cv2.convertScaleAbs(cv2.filter2D(image, cv2.CV_64F, vertical_edge_kernel)) + cv2.convertScaleAbs(cv2.filter2D(image, cv2.CV_64F, diagonal_edge_kernel))
 
 ret, filteredEdges = cv2.threshold(edges, 100, 255, cv2.THRESH_BINARY)
 
 
 lines = cv2.HoughLinesP(filteredEdges, 1, 1 * np.pi / 180, 150, None, 32, 32)
 
+done = False
 if (not lines is None):
     line_lengths = np.zeros(len(lines))
     for i in range(0, len(lines)):
@@ -41,7 +77,7 @@ if (not lines is None):
 
     #data extraction
     for i in range(0, len(lines)):
-
+            if done: break
             l = lines[line_ranks[i]][0]
 
             size = int(math.sqrt((l[0]-l[2]) ** 2 + (l[1]-l[3]) ** 2) / 2) # make a point per 2 pixel length of the line
@@ -77,34 +113,44 @@ if (not lines is None):
                         dists.append(math.sqrt((xs[j]-prev[0])**2 + (ys[j]-prev[1])**2))
                     prev = (xs[j],ys[j])
 
-            #after this loop dists doesn't mean anything
             if (dists):
                 distThreshold = np.sort(dists)[int(len(dists) / 4)] #the median size of a small block is the 25% percentile of block size (maybe should be 33% as small blocks are in theory 2/3rds of blocks?)
                 for j in reversed(range(len(points) - 1)):
-                    if (dists[j] > distThreshold * 1.5): #if larger than median small block * 1.5, assume a large block (add a bit)
+                    if (dists[j] > distThreshold * 1.5): #if larger than median small block * 1.5, assume a large block (add a bit between)
                         points.insert(j+1, int((points[j] + points[j+1]) / 2))
                         bits.insert(j+1, bits[j])
                     elif (dists[j] < distThreshold * 0.5): #if smaller than median small block * 0.5, assume noise (remove a bit)
                         points.pop(j)
                         bits.pop(j)
-            
-            #print(bits)
 
-            if (len(bits) >= 16):
-                cv2.line(debugImage, (l[0], l[1]), (l[2], l[3]), (0,215,255), 1, cv2.LINE_AA)
-            else:
-                cv2.line(debugImage, (l[0], l[1]), (l[2], l[3]), (0,0,255), 1, cv2.LINE_AA)
+            # if (len(bits) >= n_bits):
+            #     cv2.line(debugImage, (l[0], l[1]), (l[2], l[3]), (0,215,255), 1, cv2.LINE_AA)
+            # else:
+            #     cv2.line(debugImage, (l[0], l[1]), (l[2], l[3]), (0,0,255), 1, cv2.LINE_AA)
 
-            for j in range(len(points)):
-                if (bits[j] == 0):
-                    cv2.circle(debugImage, (xs[points[j]], ys[points[j]] + offset), 4, (0,255,0), -1)
-                else:
-                    cv2.circle(debugImage, (xs[points[j]], ys[points[j]] + offset), 4, (255,0,0), -1)
-            
+            # for j in range(len(points)):
+            #     if (bits[j] == 0):
+            #         cv2.circle(debugImage, (xs[points[j]], ys[points[j]] + offset), 4, (0,255,0), -1)
+            #     else:
+            #         cv2.circle(debugImage, (xs[points[j]], ys[points[j]] + offset), 4, (255,0,0), -1)
 
-            if (len(bits) >= 16): # we found a match! should do bit checking in this condition
-                # do solve PNP wow
-                break
+            if (len(bits) >= n_bits): # we found a match! should do bit checking in this condition
+                print(bits)
+                for strip in strips:
+                    indexes, length = longestCommonSubarray(bits, strip)
+                    if (length > n_bits):
+                        print("common length", len(bits), "at indexes", indexes, ": ", bits)
+                        for j in range(int(indexes[0]),int(indexes[0]+length)):
+                            if (bits[j] == 0):
+                                cv2.circle(debugImage, (xs[points[j]], ys[points[j]] + offset), 4, (0,255,0), -1)
+                            else:
+                                cv2.circle(debugImage, (xs[points[j]], ys[points[j]] + offset), 4, (255,0,0), -1)
+
+                        done=True
+                        break
+
+                        # do solve PNP wow
+                
 
 #cv2.imshow("binimg", binImg)
 cv2.imshow("debug", debugImage)
